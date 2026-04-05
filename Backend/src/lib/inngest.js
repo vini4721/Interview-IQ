@@ -1,7 +1,7 @@
 import { Inngest } from "inngest";
 import { connectDB } from "./db.js";
 import User from "../models/User.js";
-import { streamClient } from "./stream.js";
+import { deleteStreamUser, upsertStreamUser } from "./stream.js";
 
 export const inngest = new Inngest({ id: "talent-iq" });
 
@@ -14,38 +14,33 @@ const syncUser = inngest.createFunction(
     const { id, email_addresses, first_name, last_name, image_url } = event.data;
 
     const newUser = {
-        clerkId: id,
-        email: email_addresses[0]?.email_address,
-        name: `${first_name || ""} ${last_name || ""}`,
-        profileImage: image_url,
+      clerkId: id,
+      email: email_addresses[0]?.email_address,
+      name: `${first_name || ""} ${last_name || ""}`,
+      profileImage: image_url,
     };
 
     await User.create(newUser);
 
-    // Sync user to GetStream
-    await streamClient.upsertUsers([
-      {
-        id,
-        name: newUser.name,
-        image: newUser.profileImage,
-      },
-    ]);
-  },
+    await upsertStreamUser({
+      id: newUser.clerkId.toString(),
+      name: newUser.name,
+      image: newUser.profileImage,
+    });
+  }
 );
 
 const deleteUserFromDB = inngest.createFunction(
-    { id: "delete-user-from-db" },
-    { event: "clerk/user.deleted" },
-    async ({ event }) => {
-        await connectDB();
+  { id: "delete-user-from-db" },
+  { event: "clerk/user.deleted" },
+  async ({ event }) => {
+    await connectDB();
 
-        const { id } = event.data;
-        await User.deleteOne({ clerkId: id });
+    const { id } = event.data;
+    await User.deleteOne({ clerkId: id });
 
-        // Delete user from GetStream
-        // Note: For GetStream Video, you might use deleteUser or deleteUsers
-        await streamClient.deleteUsers([id]);
-    },
+    await deleteStreamUser(id.toString());
+  }
 );
 
 export const functions = [syncUser, deleteUserFromDB];
