@@ -1,0 +1,4 @@
+import { StreamClient } from "@stream-io/node-sdk";
+import { ENV } from "./env.js";
+
+export const streamClient = new StreamClient(ENV.STREAM_API_KEY, ENV.STREAM_API_SECRET);
