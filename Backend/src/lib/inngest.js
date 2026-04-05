@@ -1,6 +1,7 @@
 import { Inngest } from "inngest";
 import { connectDB } from "./db.js";
 import User from "../models/User.js";
+import { streamClient } from "./stream.js";
 
 export const inngest = new Inngest({ id: "talent-iq" });
 
@@ -21,8 +22,15 @@ const syncUser = inngest.createFunction(
 
     await User.create(newUser);
 
-    // todo: do sth
-    },
+    // Sync user to GetStream
+    await streamClient.upsertUsers([
+      {
+        id,
+        name: newUser.name,
+        image: newUser.profileImage,
+      },
+    ]);
+  },
 );
 
 const deleteUserFromDB = inngest.createFunction(
@@ -34,7 +42,9 @@ const deleteUserFromDB = inngest.createFunction(
         const { id } = event.data;
         await User.deleteOne({ clerkId: id });
 
-        // todo: do sth else
+        // Delete user from GetStream
+        // Note: For GetStream Video, you might use deleteUser or deleteUsers
+        await streamClient.deleteUsers([id]);
     },
 );
 

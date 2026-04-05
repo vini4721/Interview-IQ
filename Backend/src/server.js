@@ -8,12 +8,15 @@ import streamRoutes from "./routes/stream.route.js";
 
 import cors from 'cors'
 
+import { clerkAuthMiddleware } from './middlewares/auth.middleware.js';
+
 const app = express()
 
 // middlewares
 
 app.use(express.json())
 app.use(cors({ origin: ENV.CLIENT_URL, credentials: true }));
+app.use(clerkAuthMiddleware);
 app.use("/api/inngest", serve({ client: inngest, functions }));
 app.use("/api/stream", streamRoutes);
 

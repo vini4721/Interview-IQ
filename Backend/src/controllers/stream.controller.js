@@ -2,9 +2,8 @@ import { streamClient } from "../lib/stream.js";
 
 export const generateToken = async (req, res) => {
   try {
-    // Usually, you should extract the userId from Clerk Auth middleware here!
-    // For now, we expect the frontend to pass the userId securely, or we extract it from req.auth (if using Clerk middleware)
-    const { userId } = req.body;
+    // Extract userId from Clerk Auth middleware
+    const { userId } = req.auth;
 
     if (!userId) {
       return res.status(400).json({ error: "User ID is required" });
