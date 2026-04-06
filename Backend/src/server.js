@@ -1,42 +1,61 @@
-import express from 'express';
-import { ENV } from './lib/env.js';
+import express from "express";
+import path from "path";
+import cors from "cors";
 import { serve } from "inngest/express";
-import { connectDB } from './lib/db.js';
-import { inngest, functions } from './lib/inngest.js';
+import { clerkMiddleware } from "@clerk/express";
+
+import { ENV } from "./lib/env.js";
+import { connectDB } from "./lib/db.js";
+import { inngest, functions } from "./lib/inngest.js";
+
 import chatRoutes from "./routes/chatRoutes.js";
 import sessionRoutes from "./routes/sessionRoute.js";
-import streamRoutes from "./routes/stream.route.js";
 
-import cors from 'cors'
+const app = express();
 
-import { clerkAuthMiddleware } from './middleware/protectRoute.js';
+const __dirname = path.resolve();
 
-const app = express()
+app.use(express.json());
 
-// middlewares
+const devOrigins = [
+  ENV.CLIENT_URL,
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
+].filter(Boolean);
 
-app.use(express.json())
-app.use(cors({ origin: ENV.CLIENT_URL, credentials: true }));
-app.use(clerkAuthMiddleware);
+app.use(
+  cors({
+    origin: ENV.NODE_ENV === "production" ? ENV.CLIENT_URL : devOrigins,
+    credentials: true,
+  })
+);
+app.use(clerkMiddleware());
+
 app.use("/api/inngest", serve({ client: inngest, functions }));
 app.use("/api/chat", chatRoutes);
 app.use("/api/sessions", sessionRoutes);
-app.use("/api/stream", streamRoutes);
 
+app.get("/health", (req, res) => {
+  res.status(200).json({ msg: "api is up and running" });
+});
 
-app.get('/', (req,res) => {
-    res.status(200).json({msg: "success from api"})
-})
+if (ENV.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../../Frontend/dist")));
+
+  app.get("/{*any}", (req, res) => {
+    res.sendFile(path.join(__dirname, "../../Frontend", "dist", "index.html"));
+  });
+}
 
 const startServer = async () => {
-    try {
-        await connectDB();
-        app.listen(3000, () => {
-            console.log("sever started");
-        })
-    } catch (error) {
-        console.log("server not started ❌");
-    }
-}
+  try {
+    await connectDB();
+    const port = ENV.PORT || 3000;
+    app.listen(port, () => console.log("Server is running on port:", port));
+  } catch (error) {
+    console.error("💥 Error starting the server", error);
+  }
+};
 
 startServer();

@@ -1,87 +1,12 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
-
 @import "tailwindcss";
 @plugin "daisyui" {
-  themes: dark --default;
+  themes: all;
 }
 
-/* ===== Global Base ===== */
+/* Add cursor pointer to buttons by default - this is coming from tailwind docs */
 @layer base {
-  :root {
-    font-family: "Inter", system-ui, -apple-system, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  body {
-    background-color: oklch(var(--b2));
-  }
-
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
-
-  /* Smooth scrolling */
-  html {
-    scroll-behavior: smooth;
-  }
-
-  /* Scrollbar styling */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: oklch(var(--bc) / 0.15);
-    border-radius: 99px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: oklch(var(--bc) / 0.3);
-  }
-
-  /* Monospace font for code */
-  code, pre, textarea[class*="font-mono"], .font-mono {
-    font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
-  }
-}
-
-/* ===== Utility Animations ===== */
-@layer utilities {
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
-  }
-  
-  .animate-glow {
-    animation: glow 2s ease-in-out infinite alternate;
-  }
-
-  .animate-slide-up {
-    animation: slideUp 0.4s ease-out forwards;
-  }
-
-  .gradient-text {
-    background: linear-gradient(135deg, oklch(var(--p)), oklch(var(--s)));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-12px); }
-}
-
-@keyframes glow {
-  from { box-shadow: 0 0 10px oklch(var(--p) / 0.2); }
-  to { box-shadow: 0 0 30px oklch(var(--p) / 0.5), 0 0 60px oklch(var(--p) / 0.2); }
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
 }
