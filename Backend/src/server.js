@@ -5,6 +5,7 @@ import { connectDB } from './lib/db.js';
 import { inngest, functions } from './lib/inngest.js';
 import chatRoutes from "./routes/chatRoutes.js";
 import sessionRoutes from "./routes/sessionRoute.js";
+import streamRoutes from "./routes/stream.route.js";
 
 import cors from 'cors'
 
@@ -20,6 +21,7 @@ app.use(clerkAuthMiddleware);
 app.use("/api/inngest", serve({ client: inngest, functions }));
 app.use("/api/chat", chatRoutes);
 app.use("/api/sessions", sessionRoutes);
+app.use("/api/stream", streamRoutes);
 
 
 app.get('/', (req,res) => {
