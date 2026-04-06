@@ -1,14 +1,15 @@
-import express from "express";
-import path from "path";
-import cors from "cors";
-import { serve } from "inngest/express";
 import { clerkMiddleware } from "@clerk/express";
+import cors from "cors";
+import express from "express";
+import { serve } from "inngest/express";
+import path from "path";
 
-import { ENV } from "./lib/env.js";
 import { connectDB } from "./lib/db.js";
-import { inngest, functions } from "./lib/inngest.js";
+import { ENV } from "./lib/env.js";
+import { functions, inngest } from "./lib/inngest.js";
 
 import chatRoutes from "./routes/chatRoutes.js";
+import executeRoutes from "./routes/executeRoutes.js";
 import sessionRoutes from "./routes/sessionRoute.js";
 
 const app = express();
@@ -28,13 +29,14 @@ app.use(
   cors({
     origin: ENV.NODE_ENV === "production" ? ENV.CLIENT_URL : devOrigins,
     credentials: true,
-  })
+  }),
 );
 app.use(clerkMiddleware());
 
 app.use("/api/inngest", serve({ client: inngest, functions }));
 app.use("/api/chat", chatRoutes);
 app.use("/api/sessions", sessionRoutes);
+app.use("/api/execute", executeRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ msg: "api is up and running" });

@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { PROBLEMS } from "../data/problems";
 import Navbar from "../components/Navbar";
+import { PROBLEMS } from "../data/problems";
 
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import ProblemDescription from "../components/ProblemDescription";
-import OutputPanel from "../components/OutputPanel";
 import CodeEditorPanel from "../components/CodeEditorPanel";
+import ProblemDescription from "../components/ProblemDescription";
+import TestCaseViewer from "../components/TestCaseViewer";
 import { executeCode } from "../lib/piston";
 
-import toast from "react-hot-toast";
 import confetti from "canvas-confetti";
+import toast from "react-hot-toast";
 
 function ProblemPage() {
   const { id } = useParams();
@@ -18,8 +18,10 @@ function ProblemPage() {
 
   const [currentProblemId, setCurrentProblemId] = useState("two-sum");
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
-  const [code, setCode] = useState(PROBLEMS[currentProblemId].starterCode.javascript);
-  const [output, setOutput] = useState(null);
+  const [code, setCode] = useState(
+    PROBLEMS[currentProblemId].starterCode.javascript,
+  );
+  const [testResults, setTestResults] = useState([]);
   const [isRunning, setIsRunning] = useState(false);
 
   const currentProblem = PROBLEMS[currentProblemId];
@@ -29,7 +31,7 @@ function ProblemPage() {
     if (id && PROBLEMS[id]) {
       setCurrentProblemId(id);
       setCode(PROBLEMS[id].starterCode[selectedLanguage]);
-      setOutput(null);
+      setTestResults([]);
     }
   }, [id, selectedLanguage]);
 
@@ -37,10 +39,11 @@ function ProblemPage() {
     const newLang = e.target.value;
     setSelectedLanguage(newLang);
     setCode(currentProblem.starterCode[newLang]);
-    setOutput(null);
+    setTestResults([]);
   };
 
-  const handleProblemChange = (newProblemId) => navigate(`/problem/${newProblemId}`);
+  const handleProblemChange = (newProblemId) =>
+    navigate(`/problem/${newProblemId}`);
 
   const triggerConfetti = () => {
     confetti({
@@ -68,7 +71,7 @@ function ProblemPage() {
           .replace(/\[\s+/g, "[")
           .replace(/\s+\]/g, "]")
           // normalize spaces around commas to single space after comma
-          .replace(/\s*,\s*/g, ",")
+          .replace(/\s*,\s*/g, ","),
       )
       .filter((line) => line.length > 0)
       .join("\n");
@@ -81,27 +84,57 @@ function ProblemPage() {
     return normalizedActual == normalizedExpected;
   };
 
+  const parseTestCasesFromOutput = (output) => {
+    // Split output by lines and create test cases
+    const lines = output
+      .trim()
+      .split("\n")
+      .filter((line) => line.trim());
+    const tests = [];
+
+    currentProblem.examples.forEach((example, idx) => {
+      tests.push({
+        input: example.input,
+        expected: example.output,
+        actual: lines[idx] || "No output",
+        passed: checkIfTestsPassed(lines[idx] || "No output", example.output),
+        error: null,
+      });
+    });
+
+    return tests;
+  };
+
   const handleRunCode = async () => {
     setIsRunning(true);
-    setOutput(null);
+    setTestResults([]);
 
     const result = await executeCode(selectedLanguage, code);
-    setOutput(result);
     setIsRunning(false);
 
-    // check if code executed successfully and matches expected output
-
     if (result.success) {
-      const expectedOutput = currentProblem.expectedOutput[selectedLanguage];
-      const testsPassed = checkIfTestsPassed(result.output, expectedOutput);
+      // Parse individual test cases from output
+      const tests = parseTestCasesFromOutput(result.output);
+      setTestResults(tests);
 
-      if (testsPassed) {
+      const allPassed = tests.every((t) => t.passed);
+
+      if (allPassed) {
         triggerConfetti();
         toast.success("All tests passed! Great job!");
       } else {
-        toast.error("Tests failed. Check your output!");
+        toast.error("Some tests failed. Check your output!");
       }
     } else {
+      setTestResults([
+        {
+          input: "N/A",
+          expected: "N/A",
+          actual: "Error",
+          passed: false,
+          error: result.error,
+        },
+      ]);
       toast.error("Code execution failed!");
     }
   };
@@ -141,10 +174,13 @@ function ProblemPage() {
 
               <PanelResizeHandle className="h-2 bg-base-300 hover:bg-primary transition-colors cursor-row-resize" />
 
-              {/* Bottom panel - Output Panel*/}
+              {/* Bottom panel - Test Case Viewer*/}
 
               <Panel defaultSize={30} minSize={30}>
-                <OutputPanel output={output} />
+                <TestCaseViewer
+                  testResults={testResults}
+                  isRunning={isRunning}
+                />
               </Panel>
             </PanelGroup>
           </Panel>
