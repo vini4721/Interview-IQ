@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { useLocation, useNavigate, useParams } from "react-router";
 import CodeEditorPanel from "../components/CodeEditorPanel";
+import FetchLeetCodeModal from "../components/FetchLeetCodeModal";
 import Navbar from "../components/Navbar";
 import ShareMeetingDialog from "../components/ShareMeetingDialog";
 import TestCaseViewer from "../components/TestCaseViewer";
@@ -28,6 +29,8 @@ function SessionPage() {
   const [testResults, setTestResults] = useState([]);
   const [isRunning, setIsRunning] = useState(false);
   const [shareMeetingOpen, setShareMeetingOpen] = useState(false);
+  const [fetchLeetCodeOpen, setFetchLeetCodeOpen] = useState(false);
+  const [fetchedProblem, setFetchedProblem] = useState(null);
 
   const {
     data: sessionData,
@@ -49,6 +52,10 @@ function SessionPage() {
   const problemData = session?.problem
     ? Object.values(PROBLEMS).find((p) => p.title === session.problem)
     : null;
+
+  // Use fetched problem if available, otherwise use session problem
+  const displayProblem = fetchedProblem || problemData;
+  const displayDifficulty = fetchedProblem?.difficulty || session?.difficulty;
 
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
   const [code, setCode] = useState(
@@ -131,6 +138,23 @@ function SessionPage() {
         passed: checkIfTestsPassed(lines[idx] || "No output", example.output),
         error: null,
       });
+
+      const parseTestCasesFromOutput = (output) => {
+        const lines = output
+          .trim()
+          .split("\n")
+          .filter((line) => line.trim());
+        const tests = [];
+
+        displayProblem?.examples?.forEach((example, idx) => {
+          tests.push({
+            input: example.input,
+            expected: example.output,
+            actual: lines[idx] || "No output",
+            passed: checkIfTestsPassed(lines[idx] || "No output", example.output),
+            error: null,
+          });
+        });
     });
 
     return tests;
@@ -143,6 +167,15 @@ function SessionPage() {
     const starterCode = problemData?.starterCode?.[newLang] || "";
     setCode(starterCode);
     setTestResults([]);
+
+    const handleLanguageChange = (e) => {
+      const newLang = e.target.value;
+      setSelectedLanguage(newLang);
+      // use problem-specific starter code
+      const starterCode = displayProblem?.starterCode?.[newLang] || "";
+      setCode(starterCode);
+      setTestResults([]);
+    };
   };
 
   const handleRunCode = async () => {
@@ -217,6 +250,21 @@ function SessionPage() {
                         </p>
                       </div>
 
+                      <div>
+                        <h1 className="text-3xl font-bold text-base-content">
+                          {fetchedProblem?.title || session?.problem || "Loading..."}
+                        </h1>
+                        {displayProblem?.category && (
+                          <p className="text-base-content/60 mt-1">
+                            {displayProblem.category}
+                          </p>
+                        )}
+                        <p className="text-base-content/60 mt-2">
+                          Host: {session?.host?.name || "Loading..."} •{" "}
+                          {session?.participant ? 2 : 1}/2 participants
+                        </p>
+                      </div>
+
                       <div className="flex items-center gap-3">
                         <span
                           className={`badge badge-lg ${getDifficultyBadgeClass(
@@ -226,6 +274,16 @@ function SessionPage() {
                           {session?.difficulty.slice(0, 1).toUpperCase() +
                             session?.difficulty.slice(1) || "Easy"}
                         </span>
+
+                                              <div className="flex items-center gap-3">
+                                                <span
+                                                  className={`badge badge-lg ${getDifficultyBadgeClass(
+                                                    displayDifficulty,
+                                                  )}`}
+                                                >
+                                                  {displayDifficulty?.slice(0, 1).toUpperCase() +
+                                                    displayDifficulty?.slice(1) || "Easy"}
+                                                </span>
                         {isHost && session?.status === "active" && (
                           <>
                             <button
@@ -237,6 +295,15 @@ function SessionPage() {
                               <Link2Icon className="w-4 h-4" />
                               Share meeting
                             </button>
+                                                        <button
+                                                          type="button"
+                                                          onClick={() => setFetchLeetCodeOpen(true)}
+                                                          className="btn btn-outline btn-accent btn-sm gap-2"
+                                                          title="Fetch a question from LeetCode"
+                                                        >
+                                                          📝
+                                                          Fetch Question
+                                                        </button>
                             <button
                               onClick={handleEndSession}
                               disabled={endSessionMutation.isPending}
@@ -272,6 +339,19 @@ function SessionPage() {
                             {problemData.description.text}
                           </p>
                           {problemData.description.notes?.map((note, idx) => (
+
+                                              <div className="p-6 space-y-6">
+                                                {/* problem desc */}
+                                                {displayProblem?.description && (
+                                                  <div className="bg-base-100 rounded-xl shadow-sm p-5 border border-base-300">
+                                                    <h2 className="text-xl font-bold mb-4 text-base-content">
+                                                      Description
+                                                    </h2>
+                                                    <div className="space-y-3 text-base leading-relaxed">
+                                                      <p className="text-base-content/90">
+                                                        {displayProblem.description.text || displayProblem.description}
+                                                      </p>
+                                                      {displayProblem.description.notes?.map((note, idx) => (
                             <p key={idx} className="text-base-content/90">
                               {note}
                             </p>
@@ -290,6 +370,15 @@ function SessionPage() {
 
                           <div className="space-y-4">
                             {problemData.examples.map((example, idx) => (
+
+                                                  {displayProblem?.examples &&
+                                                    displayProblem.examples.length > 0 && (
+                                                      <div className="bg-base-100 rounded-xl shadow-sm p-5 border border-base-300">
+                                                        <h2 className="text-xl font-bold mb-4 text-base-content">
+                                                          Examples
+                                                        </h2>
+                                                        <div className="space-y-4">
+                                                          {displayProblem.examples.map((example, idx) => (
                               <div key={idx}>
                                 <div className="flex items-center gap-2 mb-2">
                                   <span className="badge badge-sm">
@@ -338,6 +427,15 @@ function SessionPage() {
                           </h2>
                           <ul className="space-y-2 text-base-content/90">
                             {problemData.constraints.map((constraint, idx) => (
+
+                                                  {displayProblem?.constraints &&
+                                                    displayProblem.constraints.length > 0 && (
+                                                      <div className="bg-base-100 rounded-xl shadow-sm p-5 border border-base-300">
+                                                        <h2 className="text-xl font-bold mb-4 text-base-content">
+                                                          Constraints
+                                                        </h2>
+                                                        <ul className="space-y-2">
+                                                          {displayProblem.constraints.map((constraint, idx) => (
                               <li key={idx} className="flex gap-2">
                                 <span className="text-primary">•</span>
                                 <code className="text-sm">{constraint}</code>
@@ -421,4 +519,23 @@ function SessionPage() {
   );
 }
 
+  // update code when problem loads or changes
+  useEffect(() => {
+    if (displayProblem?.starterCode?.[selectedLanguage]) {
+      setCode(displayProblem.starterCode[selectedLanguage]);
+    }
+  }, [displayProblem, selectedLanguage]);
+
+  const handleQuestionFetched = (newProblem) => {
+    setFetchedProblem(newProblem);
+    setSelectedLanguage("javascript");
+    setCode(newProblem.starterCode?.javascript || "");
+    setTestResults([]);
+  };
+
+      <FetchLeetCodeModal
+        open={fetchLeetCodeOpen}
+        onClose={() => setFetchLeetCodeOpen(false)}
+        onQuestionFetched={handleQuestionFetched}
+      />
 export default SessionPage;
