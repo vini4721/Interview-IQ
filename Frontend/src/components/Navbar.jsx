@@ -1,6 +1,6 @@
-import { Link, useLocation } from "react-router";
-import { BookOpenIcon, LayoutDashboardIcon, SparklesIcon } from "lucide-react";
 import { UserButton } from "@clerk/clerk-react";
+import { BookOpenIcon, LayoutDashboardIcon } from "lucide-react";
+import { Link, useLocation } from "react-router";
 
 function Navbar() {
   const location = useLocation();
@@ -17,15 +17,19 @@ function Navbar() {
           to="/"
           className="group flex items-center gap-3 hover:scale-105 transition-transform duration-200"
         >
-          <div className="size-10 rounded-xl bg-gradient-to-r from-primary via-secondary to-accent flex items-center justify-center shadow-lg ">
-            <SparklesIcon className="size-6 text-white" />
-          </div>
+          <img
+            src="/interviewiq-logo.svg"
+            alt="InterviewIQ logo"
+            className="size-10 rounded-xl shadow-lg"
+          />
 
           <div className="flex flex-col">
-            <span className="font-black text-xl bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent font-mono tracking-wider">
-              Talent IQ
+            <span className="font-black text-xl bg-linear-to-r from-primary via-secondary to-accent bg-clip-text text-transparent font-mono tracking-wider">
+              InterviewIQ
             </span>
-            <span className="text-xs text-base-content/60 font-medium -mt-1">Code Together</span>
+            <span className="text-xs text-base-content/60 font-medium -mt-1">
+              Code Together
+            </span>
           </div>
         </Link>
 

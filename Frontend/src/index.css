@@ -1,10 +1,87 @@
 @import "tailwindcss";
 @plugin "daisyui" {
-  themes: all;
+  themes:
+    business --default,
+    business --prefersdark;
 }
 
 /* Add cursor pointer to buttons by default - this is coming from tailwind docs */
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  :root {
+    /* Minimal LeetCode-like palette */
+    --color-base-100: oklch(0.22 0.01 260);
+    --color-base-200: oklch(0.26 0.01 260);
+    --color-base-300: oklch(0.32 0.01 260);
+    --color-base-content: oklch(0.92 0.01 260);
+
+    --color-primary: oklch(0.78 0.16 72);
+    --color-primary-content: oklch(0.18 0.01 260);
+    --color-secondary: oklch(0.62 0.05 250);
+    --color-secondary-content: oklch(0.94 0.01 260);
+    --color-accent: oklch(0.78 0.16 72);
+    --color-accent-content: oklch(0.18 0.01 260);
+
+    --color-neutral: oklch(0.26 0.01 260);
+    --color-neutral-content: oklch(0.9 0.01 260);
+    --color-info: oklch(0.65 0.1 250);
+    --color-success: oklch(0.7 0.13 170);
+    --color-warning: oklch(0.78 0.16 72);
+    --color-error: oklch(0.62 0.21 28);
+
+    font-family: "Inter", "Segoe UI", sans-serif;
+  }
+
+  body {
+    color: var(--color-base-content);
+    background-image: linear-gradient(180deg, #1a1a1a 0%, #1f1f1f 100%);
+    background-attachment: fixed;
+  }
+
+  .card,
+  .modal-box,
+  .alert,
+  .stats,
+  .btn,
+  .input,
+  .select,
+  .textarea {
+    border-radius: 0.75rem;
+  }
+
+  .navbar,
+  .card,
+  .modal-box,
+  .alert,
+  .stats {
+    background-color: #262626;
+    border: 1px solid #3a3a3a;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
+  }
+
+  .btn {
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+
+  .btn-primary {
+    background: #ffa116;
+    border-color: #ffa116;
+    color: #1a1a1a;
+  }
+
+  .btn-primary:hover {
+    background: #ffb84d;
+    border-color: #ffb84d;
+  }
+
+  .badge {
+    border-color: #3a3a3a;
+  }
+
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;

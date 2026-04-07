@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import Navbar from "../components/Navbar";
-import { PROBLEMS } from "../data/problems";
+import { getAllProblemsMap } from "../lib/problemStore";
 
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import CodeEditorPanel from "../components/CodeEditorPanel";
@@ -15,24 +15,38 @@ import toast from "react-hot-toast";
 function ProblemPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [problemsMap, setProblemsMap] = useState(() => getAllProblemsMap());
 
-  const [currentProblemId, setCurrentProblemId] = useState("two-sum");
+  const defaultProblemId = "two-sum";
+  const initialProblemId = id && problemsMap[id] ? id : defaultProblemId;
+
+  const [currentProblemId, setCurrentProblemId] = useState(initialProblemId);
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
   const [code, setCode] = useState(
-    PROBLEMS[currentProblemId].starterCode.javascript,
+    (problemsMap[initialProblemId] || problemsMap[defaultProblemId]).starterCode
+      .javascript,
   );
   const [testResults, setTestResults] = useState([]);
   const [isRunning, setIsRunning] = useState(false);
 
-  const currentProblem = PROBLEMS[currentProblemId];
+  const currentProblem =
+    problemsMap[currentProblemId] || problemsMap[defaultProblemId];
 
   // update problem when URL param changes
   useEffect(() => {
-    if (id && PROBLEMS[id]) {
+    const map = getAllProblemsMap();
+    setProblemsMap(map);
+
+    if (id && map[id]) {
       setCurrentProblemId(id);
-      setCode(PROBLEMS[id].starterCode[selectedLanguage]);
+      setCode(map[id].starterCode[selectedLanguage] || "");
       setTestResults([]);
+      return;
     }
+
+    setCurrentProblemId(defaultProblemId);
+    setCode(map[defaultProblemId].starterCode[selectedLanguage] || "");
+    setTestResults([]);
   }, [id, selectedLanguage]);
 
   const handleLanguageChange = (e) => {
@@ -151,7 +165,7 @@ function ProblemPage() {
               problem={currentProblem}
               currentProblemId={currentProblemId}
               onProblemChange={handleProblemChange}
-              allProblems={Object.values(PROBLEMS)}
+              allProblems={Object.values(problemsMap)}
             />
           </Panel>
 

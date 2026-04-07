@@ -10,6 +10,7 @@ import { functions, inngest } from "./lib/inngest.js";
 
 import chatRoutes from "./routes/chatRoutes.js";
 import executeRoutes from "./routes/executeRoutes.js";
+import leetcodeRoutes from "./routes/leetcodeRoutes.js";
 import sessionRoutes from "./routes/sessionRoute.js";
 
 const app = express();
@@ -35,6 +36,7 @@ app.use(clerkMiddleware());
 
 app.use("/api/inngest", serve({ client: inngest, functions }));
 app.use("/api/chat", chatRoutes);
+app.use("/api/leetcode", leetcodeRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/execute", executeRoutes);
 
