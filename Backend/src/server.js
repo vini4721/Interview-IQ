@@ -23,12 +23,28 @@ const frontendIndexPath = path.join(frontendDistPath, "index.html");
 const shouldServeFrontend =
   ENV.NODE_ENV === "production" && existsSync(frontendIndexPath);
 
+const trimTrailingSlash = (value = "") => String(value).replace(/\/+$/, "");
+const allowedProdOrigins = String(ENV.CLIENT_URL || "")
+  .split(",")
+  .map((value) => trimTrailingSlash(value.trim()))
+  .filter(Boolean);
+
 app.use(express.json());
 
 app.use(
   cors({
-    // In development, reflect the current origin (localhost port can vary).
-    origin: ENV.NODE_ENV === "production" ? ENV.CLIENT_URL : true,
+    // In production, allow exact configured origin(s), tolerating trailing slashes.
+    origin: (origin, callback) => {
+      if (ENV.NODE_ENV !== "production") return callback(null, true);
+      if (!origin) return callback(null, true);
+
+      const normalizedOrigin = trimTrailingSlash(origin);
+      if (allowedProdOrigins.includes(normalizedOrigin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   }),
 );
