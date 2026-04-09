@@ -1,10 +1,27 @@
 {
   "$schema": "https://railway.app/config.schema.json",
-  "build": {
-    "builder": "DOCKERFILE"
-  },
-  "deploy": {
-    "startCommand": "npm start",
-    "restartPolicyMaxRetries": 5
+  "services": {
+    "backend": {
+      "rootDirectory": "Backend",
+      "build": {
+        "builder": "DOCKERFILE",
+        "dockerfile": "Dockerfile"
+      },
+      "deploy": {
+        "startCommand": "npm start",
+        "restartPolicyMaxRetries": 5
+      }
+    },
+    "frontend": {
+      "rootDirectory": "Frontend",
+      "build": {
+        "builder": "DOCKERFILE",
+        "dockerfile": "Dockerfile"
+      },
+      "deploy": {
+        "startCommand": "npm run build && npm install -g serve && serve -s dist -l 3000",
+        "restartPolicyMaxRetries": 5
+      }
+    }
   }
 }
