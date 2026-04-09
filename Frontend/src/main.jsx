@@ -10,7 +10,6 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router";
 import App from "./App.jsx";
 import ClerkApiAuth from "./components/ClerkApiAuth.jsx";
-import SmoothScrollProvider from "./components/SmoothScrollProvider.jsx";
 import "./index.css";
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -60,11 +59,9 @@ function AuthShell() {
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <SmoothScrollProvider>
-        <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
-          <AuthShell />
-        </ClerkProvider>
-      </SmoothScrollProvider>
+      <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+        <AuthShell />
+      </ClerkProvider>
     </QueryClientProvider>
   </StrictMode>,
 );

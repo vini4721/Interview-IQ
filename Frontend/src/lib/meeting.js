@@ -1,7 +1,7 @@
 /** Full URL guests use to open this session (they must sign in). */
 export function getMeetingJoinUrl(sessionId) {
   if (typeof window === "undefined" || !sessionId) return "";
-  return `${window.location.origin}/session/${sessionId}`;
+  return `${window.location.origin}/session/${sessionId}?role=guest`;
 }
 
 /** Short grouped code for reading aloud (joining still requires the full link). */

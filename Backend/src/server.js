@@ -4,6 +4,7 @@ import express from "express";
 import { serve } from "inngest/express";
 import path from "path";
 
+import { getSessionById } from "./controllers/sessionController.js";
 import { connectDB } from "./lib/db.js";
 import { ENV } from "./lib/env.js";
 import { functions, inngest } from "./lib/inngest.js";
@@ -19,19 +20,40 @@ const __dirname = path.resolve();
 
 app.use(express.json());
 
-const devOrigins = [
-  ENV.CLIENT_URL,
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "http://localhost:5175",
-].filter(Boolean);
-
 app.use(
   cors({
-    origin: ENV.NODE_ENV === "production" ? ENV.CLIENT_URL : devOrigins,
+    // In development, reflect the current origin (localhost port can vary).
+    origin: ENV.NODE_ENV === "production" ? ENV.CLIENT_URL : true,
     credentials: true,
   }),
 );
+
+if (ENV.NODE_ENV !== "production") {
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin && /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) {
+      res.header("Access-Control-Allow-Origin", origin);
+      res.header("Vary", "Origin");
+      res.header("Access-Control-Allow-Credentials", "true");
+      res.header(
+        "Access-Control-Allow-Headers",
+        "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+      );
+      res.header(
+        "Access-Control-Allow-Methods",
+        "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
+      );
+      if (req.method === "OPTIONS") {
+        return res.sendStatus(204);
+      }
+    }
+    return next();
+  });
+}
+
+// Public read endpoint for guest invite flows (avoids Clerk dev redirect when signed out).
+app.get("/api/public/sessions/:id", getSessionById);
+
 app.use(clerkMiddleware());
 
 app.use("/api/inngest", serve({ client: inngest, functions }));

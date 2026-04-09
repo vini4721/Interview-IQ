@@ -2,76 +2,79 @@ import { UserButton } from "@clerk/clerk-react";
 import { BookOpenIcon, LayoutDashboardIcon } from "lucide-react";
 import { Link, useLocation } from "react-router";
 
-function Navbar() {
+function Navbar({ hideBrand = false }) {
   const location = useLocation();
 
-  console.log(location);
-
   const isActive = (path) => location.pathname === path;
+  const isSessionPage = location.pathname.startsWith("/session");
 
   return (
-    <nav className="bg-base-100/80 backdrop-blur-md border-b border-primary/20 sticky top-0 z-50 shadow-lg">
-      <div className="max-w-7xl mx-auto p-4 flex items-center justify-between">
-        {/* LOGO */}
-        <Link
-          to="/"
-          className="group flex items-center gap-3 hover:scale-105 transition-transform duration-200"
-        >
-          <img
-            src="/interviewiq-logo.svg"
-            alt="InterviewIQ logo"
-            className="size-10 rounded-xl shadow-lg"
-          />
+    <nav className="bg-linear-to-r from-base-100 to-base-100 border-b border-base-300/50 sticky top-0 z-50 shadow-sm">
+      <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+        {/* LOGO - Hidden on session/interview screen */}
+        {!isSessionPage && !hideBrand && (
+          <Link
+            to="/"
+            className="group flex items-center gap-2.5 hover:opacity-80 transition-opacity duration-200 shrink-0"
+          >
+            <img
+              src="/interviewiq-logo.svg"
+              alt="InterviewIQ logo"
+              className="size-9 rounded-lg"
+            />
+            <div className="flex flex-col gap-0.5">
+              <span className="font-bold text-base bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
+                InterviewIQ
+              </span>
+              <span className="text-xs text-base-content/50 font-medium leading-none">
+                Code Together
+              </span>
+            </div>
+          </Link>
+        )}
 
-          <div className="flex flex-col">
-            <span className="font-black text-xl bg-linear-to-r from-primary via-secondary to-accent bg-clip-text text-transparent font-mono tracking-wider">
-              InterviewIQ
-            </span>
-            <span className="text-xs text-base-content/60 font-medium -mt-1">
-              Code Together
-            </span>
-          </div>
-        </Link>
+        {/* Spacer or centered logo area for session page */}
+        {(isSessionPage || hideBrand) && <div className="flex-1" />}
 
-        <div className="flex items-center gap-1">
+        {/* Navigation Links */}
+        <div className="flex items-center gap-2 ml-auto">
           {/* PROBLEMS PAGE LINK */}
           <Link
-            to={"/problems"}
-            className={`px-4 py-2.5 rounded-lg transition-all duration-200 
-              ${
-                isActive("/problems")
-                  ? "bg-primary text-primary-content"
-                  : "hover:bg-base-200 text-base-content/70 hover:text-base-content"
-              }
-              
-              `}
+            to="/problems"
+            className={`px-3.5 py-2 rounded-md transition-all duration-200 flex items-center gap-2 font-medium text-sm ${
+              isActive("/problems")
+                ? "bg-primary text-primary-content shadow-md"
+                : "text-base-content/60 hover:text-base-content hover:bg-base-200/60"
+            }`}
+            title="Problems"
           >
-            <div className="flex items-center gap-x-2.5">
-              <BookOpenIcon className="size-4" />
-              <span className="font-medium hidden sm:inline">Problems</span>
-            </div>
+            <BookOpenIcon className="size-4.5" />
+            <span className="hidden sm:inline">Problems</span>
           </Link>
 
-          {/* DASHBORD PAGE LINK */}
+          {/* DASHBOARD PAGE LINK */}
           <Link
-            to={"/dashboard"}
-            className={`px-4 py-2.5 rounded-lg transition-all duration-200 
-              ${
-                isActive("/dashboard")
-                  ? "bg-primary text-primary-content"
-                  : "hover:bg-base-200 text-base-content/70 hover:text-base-content"
-              }
-              
-              `}
+            to="/dashboard"
+            className={`px-3.5 py-2 rounded-md transition-all duration-200 flex items-center gap-2 font-medium text-sm ${
+              isActive("/dashboard")
+                ? "bg-primary text-primary-content shadow-md"
+                : "text-base-content/60 hover:text-base-content hover:bg-base-200/60"
+            }`}
+            title="Dashboard"
           >
-            <div className="flex items-center gap-x-2.5">
-              <LayoutDashboardIcon className="size-4" />
-              <span className="font-medium hidden sm:inline">Dashbord</span>
-            </div>
+            <LayoutDashboardIcon className="size-4.5" />
+            <span className="hidden sm:inline">Dashboard</span>
           </Link>
 
-          <div className="ml-4 mt-2">
-            <UserButton />
+          {/* USER PROFILE */}
+          <div className="ml-2 pl-2 border-l border-base-300/50">
+            <UserButton
+              appearance={{
+                elements: {
+                  userButtonAvatarBox: "w-9 h-9",
+                },
+              }}
+            />
           </div>
         </div>
       </div>

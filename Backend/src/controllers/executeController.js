@@ -60,7 +60,7 @@ async function executeJavaScript(code) {
         error += data.toString();
       });
 
-      child.on("close", (code) => {
+      child.on("close", (exitCode) => {
         if (!resolved) {
           resolved = true;
           clearTimeout(timeout);
@@ -71,7 +71,8 @@ async function executeJavaScript(code) {
             // ignore
           }
 
-          if (error) {
+          // Check exit code, not stderr presence
+          if (exitCode !== 0 && error) {
             resolve({
               success: false,
               output: output,
@@ -160,7 +161,7 @@ async function executePython(code) {
         error += data.toString();
       });
 
-      child.on("close", (code) => {
+      child.on("close", (exitCode) => {
         if (!resolved) {
           resolved = true;
           clearTimeout(timeout);
@@ -171,7 +172,7 @@ async function executePython(code) {
             // ignore
           }
 
-          if (error) {
+          if (exitCode !== 0 && error) {
             resolve({
               success: false,
               output: output,
@@ -224,7 +225,11 @@ async function executePython(code) {
 async function executeJava(code) {
   return new Promise((resolve) => {
     const timestamp = Date.now();
-    const tempFile = join(tmpdir(), `Main_${timestamp}.java`);
+    const tempDir = tmpdir();
+    // Extract class name from code, default to "Solution"
+    const classNameMatch = code.match(/public\s+class\s+(\w+)/);
+    const className = classNameMatch ? classNameMatch[1] : "Solution";
+    const tempFile = join(tempDir, `${className}.java`);
     let resolved = false;
 
     try {
@@ -232,6 +237,7 @@ async function executeJava(code) {
 
       const child = spawn("javac", [tempFile], {
         stdio: ["pipe", "pipe", "pipe"],
+        cwd: tempDir,
       });
 
       let compileError = "";
@@ -242,6 +248,7 @@ async function executeJava(code) {
           child.kill("SIGTERM");
           try {
             unlinkSync(tempFile);
+            unlinkSync(join(tempDir, `${className}.class`));
           } catch (e) {
             // ignore
           }
@@ -263,6 +270,7 @@ async function executeJava(code) {
             clearTimeout(timeout);
             try {
               unlinkSync(tempFile);
+              unlinkSync(join(tempDir, `${className}.class`));
             } catch (e) {
               // ignore
             }
@@ -274,11 +282,9 @@ async function executeJava(code) {
           }
 
           // Now run the compiled class
-          const classPath = tmpdir();
-          const className = `Main_${timestamp}`;
-
-          const runChild = spawn("java", ["-cp", classPath, className], {
+          const runChild = spawn("java", ["-cp", tempDir, className], {
             stdio: ["pipe", "pipe", "pipe"],
+            cwd: tempDir,
           });
 
           let output = "";
@@ -290,7 +296,7 @@ async function executeJava(code) {
               runChild.kill("SIGTERM");
               try {
                 unlinkSync(tempFile);
-                unlinkSync(join(classPath, `${className}.class`));
+                unlinkSync(join(tempDir, `${className}.class`));
               } catch (e) {
                 // ignore
               }
@@ -309,19 +315,20 @@ async function executeJava(code) {
             runError += data.toString();
           });
 
-          runChild.on("close", (code) => {
+          runChild.on("close", (exitCode) => {
             if (!resolved) {
               resolved = true;
               clearTimeout(runTimeout);
 
               try {
                 unlinkSync(tempFile);
-                unlinkSync(join(classPath, `${className}.class`));
+                unlinkSync(join(tempDir, `${className}.class`));
               } catch (e) {
                 // ignore
               }
 
-              if (runError) {
+              // Check exit code, not stderr presence
+              if (exitCode !== 0 && runError) {
                 resolve({
                   success: false,
                   output: output,
@@ -343,7 +350,7 @@ async function executeJava(code) {
 
               try {
                 unlinkSync(tempFile);
-                unlinkSync(join(classPath, `${className}.class`));
+                unlinkSync(join(tempDir, `${className}.class`));
               } catch (e) {
                 // ignore
               }

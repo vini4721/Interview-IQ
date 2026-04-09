@@ -31,8 +31,12 @@ const sessionSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    currentQuestion: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const Session = mongoose.model("Session", sessionSchema);

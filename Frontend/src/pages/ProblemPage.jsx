@@ -74,19 +74,21 @@ function ProblemPage() {
   };
 
   const normalizeOutput = (output) => {
-    // normalize output for comparison (trim whitespace, handle different spacing)
+    // Normalize output for comparison across all languages
     return output
       .trim()
       .split("\n")
-      .map((line) =>
-        line
-          .trim()
-          // remove spaces after [ and before ]
-          .replace(/\[\s+/g, "[")
-          .replace(/\s+\]/g, "]")
-          // normalize spaces around commas to single space after comma
-          .replace(/\s*,\s*/g, ","),
-      )
+      .map((line) => {
+        line = line.trim();
+        // Normalize array formats: [0, 1], [0,1], [0 , 1] all become [0,1]
+        line = line.replace(/\[\s*/g, "[").replace(/\s*\]/g, "]");
+        line = line.replace(/,\s+/g, ",");
+        // Remove trailing commas or spaces before closing bracket
+        line = line.replace(/,\s*\]/g, "]");
+        // Handle Python list format: ['a', 'b'] -> clean it up
+        line = line.replace(/'/g, '"');
+        return line;
+      })
       .filter((line) => line.length > 0)
       .join("\n");
   };
@@ -123,7 +125,24 @@ function ProblemPage() {
     setIsRunning(true);
     setTestResults([]);
 
-    const result = await executeCode(selectedLanguage, code);
+    // Auto-inject test cases if code looks incomplete
+    let codeToExecute = code;
+    const codeLines = code.trim().split("\n").length;
+    const hasTestInvocations =
+      code.includes("console.log") ||
+      code.includes("print(") ||
+      code.includes("System.out.println");
+
+    // If code is short (probably just a function stub) and no test invocations, inject testCode
+    if (
+      codeLines < 15 &&
+      !hasTestInvocations &&
+      currentProblem.testCode?.[selectedLanguage]
+    ) {
+      codeToExecute = code + "\n\n" + currentProblem.testCode[selectedLanguage];
+    }
+
+    const result = await executeCode(selectedLanguage, codeToExecute);
     setIsRunning(false);
 
     if (result.success) {
@@ -155,7 +174,7 @@ function ProblemPage() {
 
   return (
     <div className="h-screen bg-base-100 flex flex-col">
-      <Navbar />
+      <Navbar hideBrand />
 
       <div className="flex-1">
         <PanelGroup direction="horizontal">

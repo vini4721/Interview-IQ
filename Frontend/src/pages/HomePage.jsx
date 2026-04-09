@@ -1,8 +1,14 @@
-import { SignInButton } from "@clerk/clerk-react";
-import { motion, useMotionTemplate, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
+import { SignInButton, useUser } from "@clerk/clerk-react";
+import {
+  motion,
+  useMotionTemplate,
+  useMotionValue,
+  useScroll,
+  useSpring,
+  useTransform,
+} from "framer-motion";
 import {
   ActivityIcon,
-  BellDotIcon,
   CheckCheckIcon,
   CheckIcon,
   ChevronRightIcon,
@@ -10,6 +16,7 @@ import {
   UsersIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router";
 
 const SNIPPETS = [
   `function scoreCandidate(data) {
@@ -283,7 +290,9 @@ function TechSignalGrid() {
       }
 
       if (deletingTitle && typedTitle.length > 0) {
-        setTypedTitle(currentTitle.slice(0, Math.max(0, typedTitle.length - step * 2)));
+        setTypedTitle(
+          currentTitle.slice(0, Math.max(0, typedTitle.length - step * 2)),
+        );
         return;
       }
 
@@ -317,7 +326,9 @@ function TechSignalGrid() {
           style={{ transform: "translateZ(28px)" }}
           className="rounded-xl border border-[#2b4668] bg-[#0a203a] p-3 shadow-[0_16px_22px_rgba(0,0,0,0.24)]"
         >
-          <div className="mb-2 text-xl font-semibold text-[#dce8f8]">Prompt</div>
+          <div className="mb-2 text-xl font-semibold text-[#dce8f8]">
+            Prompt
+          </div>
           <p className="text-lg font-semibold text-[#edf4ff]">
             {typedTitle}
             <span className="animate-pulse text-[#8ea2bd]">|</span>
@@ -364,7 +375,10 @@ function TechSignalGrid() {
                   <span
                     key={`in-b-${i}`}
                     className="h-4 rounded"
-                    style={{ backgroundColor: color, width: `${36 + i * 10}px` }}
+                    style={{
+                      backgroundColor: color,
+                      width: `${36 + i * 10}px`,
+                    }}
                   />
                 ),
               )}
@@ -375,7 +389,10 @@ function TechSignalGrid() {
                   <span
                     key={`in-c-${i}`}
                     className="h-4 rounded"
-                    style={{ backgroundColor: color, width: `${26 + i * 12}px` }}
+                    style={{
+                      backgroundColor: color,
+                      width: `${26 + i * 12}px`,
+                    }}
                   />
                 ),
               )}
@@ -420,33 +437,45 @@ function TechSignalGrid() {
               onClick={handleSubmit}
               className="rounded-md bg-[#069e37] px-4 py-1 text-xl font-semibold text-white hover:bg-[#08b740]"
             >
-              {submitting ? "Submitting..." : submitted ? "Submitted" : "Submit"}
+              {submitting
+                ? "Submitting..."
+                : submitted
+                  ? "Submitted"
+                  : "Submit"}
             </button>
           </div>
           <div className="space-y-3">
-            {(submitted ? [true, true, true] : [true, false, false]).map((ok, i) => {
-              const animatedFail = !ok && cycle % 2 === 1 && i === 1;
-              return (
-                <div key={`out-${i}`} className="rounded-lg bg-[#1b3551] p-3">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`flex size-8 items-center justify-center rounded-full border-2 ${ok ? "border-[#3db36a] text-[#3db36a]" : "border-[#e34f4f] text-[#e34f4f]"}`}
-                    >
-                      {ok ? "✓" : "✕"}
+            {(submitted ? [true, true, true] : [true, false, false]).map(
+              (ok, i) => {
+                const animatedFail = !ok && cycle % 2 === 1 && i === 1;
+                return (
+                  <div key={`out-${i}`} className="rounded-lg bg-[#1b3551] p-3">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`flex size-8 items-center justify-center rounded-full border-2 ${ok ? "border-[#3db36a] text-[#3db36a]" : "border-[#e34f4f] text-[#e34f4f]"}`}
+                      >
+                        {ok ? "✓" : "✕"}
+                      </div>
+                      <motion.div
+                        animate={
+                          running
+                            ? { width: ["8%", "55%", "32%", "72%", "48%"] }
+                            : {
+                                width: ok
+                                  ? "74%"
+                                  : animatedFail
+                                    ? "58%"
+                                    : "77%",
+                              }
+                        }
+                        transition={{ duration: running ? 1.2 : 0.45 }}
+                        className={`h-4 rounded ${ok ? "bg-[#3db36a]" : "bg-[#e34f4f]"}`}
+                      />
                     </div>
-                    <motion.div
-                      animate={
-                        running
-                          ? { width: ["8%", "55%", "32%", "72%", "48%"] }
-                          : { width: ok ? "74%" : animatedFail ? "58%" : "77%" }
-                      }
-                      transition={{ duration: running ? 1.2 : 0.45 }}
-                      className={`h-4 rounded ${ok ? "bg-[#3db36a]" : "bg-[#e34f4f]"}`}
-                    />
                   </div>
-                </div>
-              );
-            })}
+                );
+              },
+            )}
           </div>
         </motion.div>
 
@@ -494,13 +523,41 @@ function HeroChaosBanner({ pointerX, pointerY, pointerOpacity }) {
 }
 
 function HomePage() {
+  const { isSignedIn } = useUser();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTarget =
+    new URLSearchParams(location.search).get("redirect") ||
+    (typeof window !== "undefined"
+      ? window.localStorage.getItem("interviewiq_redirect_target")
+      : null) ||
+    "/dashboard";
   const partnerLogos = ["NEXUS", "COBALT", "SYNAPSE", "QUANTUM", "ORBIT"];
   const heroSectionRef = useRef(null);
+  useEffect(() => {
+    if (!isSignedIn) return;
+
+    const safeTarget = redirectTarget.startsWith("/")
+      ? redirectTarget
+      : "/dashboard";
+
+    if (safeTarget !== "/") {
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem("interviewiq_redirect_target");
+      }
+      navigate(safeTarget, { replace: true });
+    }
+  }, [isSignedIn, redirectTarget, navigate]);
+
   const { scrollYProgress: heroProgress } = useScroll({
     target: heroSectionRef,
     offset: ["start start", "end end"],
   });
-  const monitorScale = useTransform(heroProgress, [0, 0.45, 0.85], [1, 0.88, 0.62]);
+  const monitorScale = useTransform(
+    heroProgress,
+    [0, 0.45, 0.85],
+    [1, 0.88, 0.62],
+  );
   const monitorY = useTransform(heroProgress, [0, 0.85], [0, -140]);
   const monitorX = useTransform(heroProgress, [0, 0.85], [0, 380]);
   const monitorRotateX = useTransform(heroProgress, [0, 0.8], [0, 14]);
@@ -508,28 +565,43 @@ function HomePage() {
   const monitorOpacity = useTransform(heroProgress, [0.7, 1], [1, 0]);
   const introOpacity = useTransform(heroProgress, [0, 0.3, 0.9], [1, 1, 0.75]);
   const introY = useTransform(heroProgress, [0, 0.75], [0, -24]);
-  const hintOpacity = useTransform(heroProgress, [0, 0.35, 0.65], [0.9, 0.85, 0]);
-  const monitorSkeletonOpacity = useTransform(heroProgress, [0, 0.2, 0.35], [1, 0.2, 0]);
-  const monitorDashboardOpacity = useTransform(heroProgress, [0, 0.28, 0.72], [1, 1, 0]);
+  const hintOpacity = useTransform(
+    heroProgress,
+    [0, 0.35, 0.65],
+    [0.9, 0.85, 0],
+  );
+  const monitorSkeletonOpacity = useTransform(
+    heroProgress,
+    [0, 0.2, 0.35],
+    [1, 0.2, 0],
+  );
+  const monitorDashboardOpacity = useTransform(
+    heroProgress,
+    [0, 0.28, 0.72],
+    [1, 1, 0],
+  );
   const monitorDashboardY = useTransform(heroProgress, [0, 0.72], [0, -14]);
   const pointerX = useMotionValue(-200);
   const pointerY = useMotionValue(-200);
   const pointerActive = useMotionValue(0);
-  const pointerSmoothX = useSpring(pointerX, { stiffness: 180, damping: 30, mass: 0.25 });
-  const pointerSmoothY = useSpring(pointerY, { stiffness: 180, damping: 30, mass: 0.25 });
-  const pointerOpacity = useSpring(pointerActive, { stiffness: 160, damping: 28, mass: 0.3 });
-
-  useEffect(() => {
-    const prev = document.documentElement.style.scrollBehavior;
-    document.documentElement.style.scrollBehavior = "smooth";
-
-    return () => {
-      document.documentElement.style.scrollBehavior = prev;
-    };
-  }, []);
+  const pointerSmoothX = useSpring(pointerX, {
+    stiffness: 180,
+    damping: 30,
+    mass: 0.25,
+  });
+  const pointerSmoothY = useSpring(pointerY, {
+    stiffness: 180,
+    damping: 30,
+    mass: 0.25,
+  });
+  const pointerOpacity = useSpring(pointerActive, {
+    stiffness: 160,
+    damping: 28,
+    mass: 0.3,
+  });
 
   return (
-    <div className="min-h-screen bg-[#05070d] text-[#e7ebf3] scroll-smooth">
+    <div className="min-h-screen bg-[#05070d] text-[#e7ebf3]">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <motion.div
           animate={{ y: [0, -20, 0], x: [0, 12, 0] }}
@@ -544,7 +616,10 @@ function HomePage() {
       </div>
 
       <main>
-        <section ref={heroSectionRef} className="relative h-[220vh] border-b border-[#141c2a]">
+        <section
+          ref={heroSectionRef}
+          className="relative h-[220vh] border-b border-[#141c2a]"
+        >
           <div
             className="sticky top-0 h-screen overflow-hidden"
             onPointerMove={(event) => {
@@ -573,28 +648,47 @@ function HomePage() {
             <div className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(circle_at_22%_42%,rgba(108,156,208,0.14),transparent_26%),radial-gradient(circle_at_78%_32%,rgba(78,125,176,0.12),transparent_24%)]" />
 
             <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 min-h-screen grid lg:grid-cols-[1fr_1fr] gap-8 items-center">
-              <motion.div style={{ opacity: introOpacity, y: introY }} className="max-w-2xl">
+              <motion.div
+                style={{ opacity: introOpacity, y: introY }}
+                className="max-w-2xl"
+              >
                 <div className="inline-flex items-center gap-2 rounded-full border border-[#6d6299]/55 bg-[#140f2e]/70 px-3 py-1 text-[11px] tracking-[0.14em] text-[#c3bce8]">
                   LIVE INTRO EXPERIENCE
                 </div>
-                <p className="text-sm sm:text-base text-[#aba7d8]">InterviewIQ</p>
+                <p className="text-sm sm:text-base text-[#aba7d8]">
+                  InterviewIQ
+                </p>
                 <h1 className="mt-2 text-4xl sm:text-5xl lg:text-7xl font-black leading-[1.03] tracking-tight text-[#f2f4fb]">
-                  Hire the <span className="text-[#9e9ee6] italic">Architects</span>
+                  Hire the{" "}
+                  <span className="text-[#9e9ee6] italic">Architects</span>
                   <br />
                   of the Future.
                 </h1>
                 <p className="mt-6 text-[#b8bdd4] max-w-xl leading-relaxed">
-                  InterviewIQ is the elite technical assessment platform where deep
-                  engineering talent meets fluid visual precision, secure intelligence,
-                  and built-for-hiring stakes.
+                  InterviewIQ is the elite technical assessment platform where
+                  deep engineering talent meets fluid visual precision, secure
+                  intelligence, and built-for-hiring stakes.
                 </p>
 
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <SignInButton mode="modal">
-                    <button className="btn rounded-lg px-7 py-2.5 bg-[#c2b4ff] hover:bg-[#d5cbff] border-[#c2b4ff] text-[#120a2f] font-semibold shadow-[0_10px_26px_rgba(164,146,240,0.35)]">
+                  {isSignedIn ? (
+                    <button
+                      className="btn rounded-lg px-7 py-2.5 bg-[#c2b4ff] hover:bg-[#d5cbff] border-[#c2b4ff] text-[#120a2f] font-semibold shadow-[0_10px_26px_rgba(164,146,240,0.35)]"
+                      onClick={() => navigate("/dashboard")}
+                    >
                       Start Recruiting
                     </button>
-                  </SignInButton>
+                  ) : (
+                    <SignInButton
+                      mode="modal"
+                      forceRedirectUrl={redirectTarget}
+                      fallbackRedirectUrl={redirectTarget}
+                    >
+                      <button className="btn rounded-lg px-7 py-2.5 bg-[#c2b4ff] hover:bg-[#d5cbff] border-[#c2b4ff] text-[#120a2f] font-semibold shadow-[0_10px_26px_rgba(164,146,240,0.35)]">
+                        Start Recruiting
+                      </button>
+                    </SignInButton>
+                  )}
                 </div>
 
                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-2 max-w-2xl">
@@ -626,7 +720,10 @@ function HomePage() {
                         </span>
                         <span
                           className="mt-1 h-2 w-2 rounded-full"
-                          style={{ backgroundColor: item.accent, boxShadow: `0 0 14px ${item.accent}` }}
+                          style={{
+                            backgroundColor: item.accent,
+                            boxShadow: `0 0 14px ${item.accent}`,
+                          }}
                         />
                       </span>
                     </motion.button>
@@ -648,18 +745,32 @@ function HomePage() {
                 <div className="w-[88vw] max-w-140">
                   <div className="rounded-[22px] border border-[#7668ac]/70 bg-[#0e0d26] p-3 shadow-[0_30px_70px_rgba(0,0,0,0.58)]">
                     <div className="rounded-2xl border border-[#9c88e0]/45 bg-[#0a0f2b] p-2.5 min-h-70 sm:min-h-80">
-                      <motion.div style={{ opacity: monitorDashboardOpacity, y: monitorDashboardY }} className="h-full rounded-lg border border-[#4e5a8a]/55 bg-[#11183e] overflow-hidden">
+                      <motion.div
+                        style={{
+                          opacity: monitorDashboardOpacity,
+                          y: monitorDashboardY,
+                        }}
+                        className="h-full rounded-lg border border-[#4e5a8a]/55 bg-[#11183e] overflow-hidden"
+                      >
                         <div className="h-full grid grid-rows-[26px_1fr] bg-[#10183b]">
                           <div className="border-b border-[#344a7c] bg-[#1a2758] px-2 flex items-center justify-between">
                             <div className="flex items-center gap-1.5 text-[6px] text-[#cfe0ff]">
                               <span className="font-semibold">Two Sum</span>
-                              <span className="rounded border border-[#5f79b1] bg-[#25386f] px-1 text-[5px] text-[#d5e4ff]">Easy</span>
-                              <span className="text-[#9ab3e3]">Host: Vinayak</span>
+                              <span className="rounded border border-[#5f79b1] bg-[#25386f] px-1 text-[5px] text-[#d5e4ff]">
+                                Easy
+                              </span>
+                              <span className="text-[#9ab3e3]">
+                                Host: Vinayak
+                              </span>
                               <span className="text-[#9ab3e3]">2/2</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <button className="rounded border border-[#4a6eb5] bg-[#27478d] px-1 py-px text-[5px] text-[#deebff]">Share</button>
-                              <button className="rounded border border-[#8f4b59] bg-[#6b2f3a] px-1 py-px text-[5px] text-[#ffd8de]">End</button>
+                              <button className="rounded border border-[#4a6eb5] bg-[#27478d] px-1 py-px text-[5px] text-[#deebff]">
+                                Share
+                              </button>
+                              <button className="rounded border border-[#8f4b59] bg-[#6b2f3a] px-1 py-px text-[5px] text-[#ffd8de]">
+                                End
+                              </button>
                             </div>
                           </div>
 
@@ -667,14 +778,26 @@ function HomePage() {
                             <div className="grid grid-rows-[42%_58%] gap-1.5">
                               <div className="rounded border border-[#334c86] bg-[#16234d] overflow-hidden">
                                 <div className="h-5 border-b border-[#32487b] bg-[#1d2f62] px-1.5 flex items-center justify-between">
-                                  <span className="text-[6px] text-[#d8e5ff]">Problem Description</span>
-                                  <span className="text-[5px] text-[#9eb6e5]">Arrays</span>
+                                  <span className="text-[6px] text-[#d8e5ff]">
+                                    Problem Description
+                                  </span>
+                                  <span className="text-[5px] text-[#9eb6e5]">
+                                    Arrays
+                                  </span>
                                 </div>
                                 <div className="p-1.5 space-y-1">
-                                  <p className="text-[5px] text-[#b7caef] leading-tight">Given an array of integers, return indices of the two numbers such that they add up to a target.</p>
+                                  <p className="text-[5px] text-[#b7caef] leading-tight">
+                                    Given an array of integers, return indices
+                                    of the two numbers such that they add up to
+                                    a target.
+                                  </p>
                                   <div className="rounded bg-[#101a3d] border border-[#2f4374] px-1.5 py-1">
-                                    <p className="text-[5px] text-[#9bb3e3]">Input: nums = [2,7,11,15], target = 9</p>
-                                    <p className="text-[5px] text-[#d2e1ff]">Output: [0,1]</p>
+                                    <p className="text-[5px] text-[#9bb3e3]">
+                                      Input: nums = [2,7,11,15], target = 9
+                                    </p>
+                                    <p className="text-[5px] text-[#d2e1ff]">
+                                      Output: [0,1]
+                                    </p>
                                   </div>
                                 </div>
                               </div>
@@ -683,11 +806,17 @@ function HomePage() {
                                 <div className="h-5 border-b border-[#32487b] bg-[#1d2f62] px-1.5 flex items-center justify-between">
                                   <div className="flex items-center gap-1">
                                     <span className="h-1.5 w-1.5 rounded-full bg-[#7ee787]" />
-                                    <span className="text-[6px] text-[#d8e5ff]">Code Editor</span>
+                                    <span className="text-[6px] text-[#d8e5ff]">
+                                      Code Editor
+                                    </span>
                                   </div>
                                   <div className="flex items-center gap-1 text-[5px] text-[#aac1ee]">
-                                    <span className="rounded border border-[#4d67a1] bg-[#223464] px-1">JavaScript</span>
-                                    <span className="rounded border border-[#4d67a1] bg-[#2a4a8f] px-1 text-[#dce9ff]">Run Code</span>
+                                    <span className="rounded border border-[#4d67a1] bg-[#223464] px-1">
+                                      JavaScript
+                                    </span>
+                                    <span className="rounded border border-[#4d67a1] bg-[#2a4a8f] px-1 text-[#dce9ff]">
+                                      Run Code
+                                    </span>
                                   </div>
                                 </div>
                                 <div className="p-1.5 font-mono space-y-1">
@@ -701,7 +830,12 @@ function HomePage() {
                                     "  }",
                                     "}",
                                   ].map((line) => (
-                                    <p key={line} className="text-[5px] leading-tight text-[#a9bfe9]">{line}</p>
+                                    <p
+                                      key={line}
+                                      className="text-[5px] leading-tight text-[#a9bfe9]"
+                                    >
+                                      {line}
+                                    </p>
                                   ))}
                                 </div>
                               </div>
@@ -710,20 +844,28 @@ function HomePage() {
                             <div className="grid grid-rows-[62%_38%] gap-1.5">
                               <div className="rounded border border-[#335088] bg-[#152652] overflow-hidden">
                                 <div className="h-5 border-b border-[#32487b] bg-[#1d2f62] px-1.5 flex items-center justify-between">
-                                  <span className="text-[6px] text-[#d8e5ff]">Live Call</span>
+                                  <span className="text-[6px] text-[#d8e5ff]">
+                                    Live Call
+                                  </span>
                                   <div className="flex items-center gap-1">
                                     <span className="h-1.5 w-1.5 rounded-full bg-[#7ee787]" />
-                                    <span className="text-[5px] text-[#9fb8e7]">2 participants</span>
+                                    <span className="text-[5px] text-[#9fb8e7]">
+                                      2 participants
+                                    </span>
                                   </div>
                                 </div>
                                 <div className="p-1.5 grid grid-cols-2 gap-1.5 h-[calc(100%-1.25rem)]">
                                   <div className="rounded border border-[#415b95] bg-[#1d3267] relative overflow-hidden">
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(150,190,255,0.28),transparent_45%)]" />
-                                    <span className="absolute bottom-1 left-1 text-[5px] text-[#dbe8ff]">Vinayak</span>
+                                    <span className="absolute bottom-1 left-1 text-[5px] text-[#dbe8ff]">
+                                      Vinayak
+                                    </span>
                                   </div>
                                   <div className="rounded border border-[#415b95] bg-[#1d3267] relative overflow-hidden">
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(150,190,255,0.24),transparent_45%)]" />
-                                    <span className="absolute bottom-1 left-1 text-[5px] text-[#dbe8ff]">Interviewer</span>
+                                    <span className="absolute bottom-1 left-1 text-[5px] text-[#dbe8ff]">
+                                      Interviewer
+                                    </span>
                                   </div>
                                   <div className="col-span-2 rounded border border-[#3b5287] bg-[#101a3c] px-1.5 py-1 flex items-center justify-center gap-1">
                                     <span className="h-2.5 w-2.5 rounded-full bg-[#2a4a8f]" />
@@ -735,13 +877,23 @@ function HomePage() {
 
                               <div className="rounded border border-[#35508a] bg-[#121f49] overflow-hidden">
                                 <div className="h-5 border-b border-[#32487b] bg-[#1d2f62] px-1.5 flex items-center justify-between">
-                                  <span className="text-[6px] text-[#d8e5ff]">Output</span>
-                                  <span className="text-[5px] text-[#89f0b2]">All tests passed</span>
+                                  <span className="text-[6px] text-[#d8e5ff]">
+                                    Output
+                                  </span>
+                                  <span className="text-[5px] text-[#89f0b2]">
+                                    All tests passed
+                                  </span>
                                 </div>
                                 <div className="p-1.5 font-mono space-y-0.5">
-                                  <p className="text-[5px] text-[#89f0b2]">PASS case_01: two sum baseline</p>
-                                  <p className="text-[5px] text-[#89f0b2]">PASS case_02: duplicate values</p>
-                                  <p className="text-[5px] text-[#89f0b2]">PASS case_03: large input stream</p>
+                                  <p className="text-[5px] text-[#89f0b2]">
+                                    PASS case_01: two sum baseline
+                                  </p>
+                                  <p className="text-[5px] text-[#89f0b2]">
+                                    PASS case_02: duplicate values
+                                  </p>
+                                  <p className="text-[5px] text-[#89f0b2]">
+                                    PASS case_03: large input stream
+                                  </p>
                                 </div>
                               </div>
                             </div>
@@ -1051,11 +1203,24 @@ function HomePage() {
               precise and reliable technical hiring process.
             </p>
             <div className="mt-7 flex flex-wrap justify-center gap-3">
-              <SignInButton mode="modal">
-                <button className="btn bg-[#8ea2bd] hover:bg-[#a2b4c9] border-[#8ea2bd] text-[#06111a] px-6 rounded-xl">
+              {isSignedIn ? (
+                <button
+                  className="btn bg-[#8ea2bd] hover:bg-[#a2b4c9] border-[#8ea2bd] text-[#06111a] px-6 rounded-xl"
+                  onClick={() => navigate("/dashboard")}
+                >
                   Create Your Free Account
                 </button>
-              </SignInButton>
+              ) : (
+                <SignInButton
+                  mode="modal"
+                  forceRedirectUrl={redirectTarget}
+                  fallbackRedirectUrl={redirectTarget}
+                >
+                  <button className="btn bg-[#8ea2bd] hover:bg-[#a2b4c9] border-[#8ea2bd] text-[#06111a] px-6 rounded-xl">
+                    Create Your Free Account
+                  </button>
+                </SignInButton>
+              )}
               <button className="btn btn-outline border-[#334a6b] text-[#d5e1f3] rounded-xl px-6">
                 Speak to an Expert
                 <ChevronRightIcon className="size-4" />

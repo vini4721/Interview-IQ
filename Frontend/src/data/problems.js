@@ -71,6 +71,17 @@ class Solution {
       python: "[0, 1]\n[1, 2]\n[0, 1]",
       java: "[0, 1]\n[1, 2]\n[0, 1]",
     },
+    testCode: {
+      javascript: `console.log(twoSum([2, 7, 11, 15], 9)); // Expected: [0, 1]
+console.log(twoSum([3, 2, 4], 6)); // Expected: [1, 2]
+console.log(twoSum([3, 3], 6)); // Expected: [0, 1]`,
+      python: `print(twoSum([2, 7, 11, 15], 9))  # Expected: [0, 1]
+print(twoSum([3, 2, 4], 6))  # Expected: [1, 2]
+print(twoSum([3, 3], 6))  # Expected: [0, 1]`,
+      java: `System.out.println(Arrays.toString(twoSum(new int[]{2, 7, 11, 15}, 9))); // Expected: [0, 1]
+System.out.println(Arrays.toString(twoSum(new int[]{3, 2, 4}, 6))); // Expected: [1, 2]
+System.out.println(Arrays.toString(twoSum(new int[]{3, 3}, 6))); // Expected: [0, 1]`,
+    },
   },
 
   "reverse-string": {
@@ -145,6 +156,29 @@ class Solution {
       python: "['o', 'l', 'l', 'e', 'h']\n['h', 'a', 'n', 'n', 'a', 'H']",
       java: "[o, l, l, e, h]\n[h, a, n, n, a, H]",
     },
+    testCode: {
+      javascript: `let test1 = ["h","e","l","l","o"];
+reverseString(test1);
+console.log(test1); // Expected: ["o","l","l","e","h"]
+
+let test2 = ["H","a","n","n","a","h"];
+reverseString(test2);
+console.log(test2); // Expected: ["h","a","n","n","a","H"]`,
+      python: `test1 = ["h","e","l","l","o"]
+reverseString(test1)
+print(test1)  # Expected: ["o","l","l","e","h"]
+
+test2 = ["H","a","n","n","a","h"]
+reverseString(test2)
+print(test2)  # Expected: ["h","a","n","n","a","H"]`,
+      java: `char[] test1 = {'h','e','l','l','o'};
+reverseString(test1);
+System.out.println(Arrays.toString(test1)); // Expected: [o, l, l, e, h]
+
+char[] test2 = {'H','a','n','n','a','h'};
+reverseString(test2);
+System.out.println(Arrays.toString(test2)); // Expected: [h, a, n, n, a, H]`,
+    },
   },
 
   "valid-palindrome": {
@@ -217,6 +251,17 @@ print(isPalindrome(" "))  # Expected: True`,
       python: "True\nFalse\nTrue",
       java: "true\nfalse\ntrue",
     },
+    testCode: {
+      javascript: `console.log(isPalindrome("A man, a plan, a canal: Panama")); // Expected: true
+console.log(isPalindrome("race a car")); // Expected: false
+console.log(isPalindrome(" ")); // Expected: true`,
+      python: `print(isPalindrome("A man, a plan, a canal: Panama"))  # Expected: True
+print(isPalindrome("race a car"))  # Expected: False
+print(isPalindrome(" "))  # Expected: True`,
+      java: `System.out.println(isPalindrome("A man, a plan, a canal: Panama")); // Expected: true
+System.out.println(isPalindrome("race a car")); // Expected: false
+System.out.println(isPalindrome(" ")); // Expected: true`,
+    },
   },
 
   "maximum-subarray": {
@@ -283,6 +328,17 @@ print(maxSubArray([5,4,-1,7,8]))  # Expected: 23`,
       python: "6\n1\n23",
       java: "6\n1\n23",
     },
+    testCode: {
+      javascript: `console.log(maxSubArray([-2,1,-3,4,-1,2,1,-5,4])); // Expected: 6
+console.log(maxSubArray([1])); // Expected: 1
+console.log(maxSubArray([5,4,-1,7,8])); // Expected: 23`,
+      python: `print(maxSubArray([-2,1,-3,4,-1,2,1,-5,4]))  # Expected: 6
+print(maxSubArray([1]))  # Expected: 1
+print(maxSubArray([5,4,-1,7,8]))  # Expected: 23`,
+      java: `System.out.println(maxSubArray(new int[]{-2,1,-3,4,-1,2,1,-5,4})); // Expected: 6
+System.out.println(maxSubArray(new int[]{1})); // Expected: 1
+System.out.println(maxSubArray(new int[]{5,4,-1,7,8})); // Expected: 23`,
+    },
   },
 
   "container-with-most-water": {
@@ -344,6 +400,94 @@ print(maxArea([1,1]))  # Expected: 1`,
       javascript: "49\n1",
       python: "49\n1",
       java: "49\n1",
+    },
+    testCode: {
+      javascript: `console.log(maxArea([1,8,6,2,5,4,8,3,7])); // Expected: 49
+console.log(maxArea([1,1])); // Expected: 1`,
+      python: `print(maxArea([1,8,6,2,5,4,8,3,7]))  # Expected: 49
+print(maxArea([1,1]))  # Expected: 1`,
+      java: `System.out.println(maxArea(new int[]{1,8,6,2,5,4,8,3,7})); // Expected: 49
+System.out.println(maxArea(new int[]{1,1})); // Expected: 1`,
+    },
+  },
+
+  "sqrt-x": {
+    id: "sqrt-x",
+    title: "Sqrt(x)",
+    difficulty: "Easy",
+    category: "Math • Binary Search",
+    description: {
+      text: "Given a non-negative integer x, return the square root of x rounded down to the nearest integer. The returned integer should be non-negative as well.",
+      notes: [
+        "You must not use any built-in exponent function or operator, such as pow(x, 0.5) or x ** 0.5.",
+      ],
+    },
+    examples: [
+      {
+        input: "x = 4",
+        output: "2",
+        explanation: "The square root of 4 is 2.",
+      },
+      {
+        input: "x = 8",
+        output: "2",
+        explanation:
+          "The square root of 8 is 2.828... and it is rounded down to 2.",
+      },
+      {
+        input: "x = 0",
+        output: "0",
+        explanation: "The square root of 0 is 0.",
+      },
+    ],
+    constraints: ["0 ≤ x ≤ 2^31 - 1"],
+    starterCode: {
+      javascript: `function mySqrt(x) {
+  // Write your solution here
+  
+}
+
+// Test cases
+console.log(mySqrt(4));   // Expected: 2
+console.log(mySqrt(8));   // Expected: 2
+console.log(mySqrt(0));   // Expected: 0`,
+      python: `def mySqrt(x):
+    # Write your solution here
+    pass
+
+# Test cases
+print(mySqrt(4))   # Expected: 2
+print(mySqrt(8))   # Expected: 2
+print(mySqrt(0))   # Expected: 0`,
+      java: `class Solution {
+    public static int mySqrt(int x) {
+        // Write your solution here
+        
+        return 0;
+    }
+    
+    public static void main(String[] args) {
+        System.out.println(mySqrt(4));   // Expected: 2
+        System.out.println(mySqrt(8));   // Expected: 2
+        System.out.println(mySqrt(0));   // Expected: 0
+    }
+}`,
+    },
+    expectedOutput: {
+      javascript: "2\n2\n0",
+      python: "2\n2\n0",
+      java: "2\n2\n0",
+    },
+    testCode: {
+      javascript: `console.log(mySqrt(4));   // Expected: 2
+console.log(mySqrt(8));   // Expected: 2
+console.log(mySqrt(0));   // Expected: 0`,
+      python: `print(mySqrt(4))   # Expected: 2
+print(mySqrt(8))   # Expected: 2
+print(mySqrt(0))   # Expected: 0`,
+      java: `System.out.println(mySqrt(4));   // Expected: 2
+System.out.println(mySqrt(8));   // Expected: 2
+System.out.println(mySqrt(0));   // Expected: 0`,
     },
   },
 };

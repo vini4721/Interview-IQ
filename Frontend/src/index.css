@@ -7,10 +7,6 @@
 
 /* Add cursor pointer to buttons by default - this is coming from tailwind docs */
 @layer base {
-  html {
-    scroll-behavior: smooth;
-  }
-
   :root {
     /* Minimal LeetCode-like palette */
     --color-base-100: oklch(0.22 0.01 260);

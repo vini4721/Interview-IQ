@@ -27,15 +27,69 @@ async function fetchGraphQL(query, variables) {
 function stripHtml(html = "") {
   return html
     .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n")
+    .replace(/<\/li>/gi, "\n")
     .replace(/<[^>]+>/g, "")
     .replace(/&nbsp;/g, " ")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
     .trim();
 }
 
-function parseExamples(content) {
+function isStructuralHeadingLine(text = "") {
+  const normalized = String(text)
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return (
+    /^examples?\s*:?$/i.test(normalized) ||
+    /^examples?\s+\d+\s*:?$/i.test(normalized) ||
+    /^constraints\s*:?$/i.test(normalized)
+  );
+}
+
+function parseDescription(content = "") {
+  const contentWithoutPreAndUl = content
+    .replace(/<pre>[\s\S]*?<\/pre>/gi, "")
+    .replace(/<ul>[\s\S]*?<\/ul>/gi, "");
+
+  const paragraphMatches = [
+    ...contentWithoutPreAndUl.matchAll(/<p>([\s\S]*?)<\/p>/gi),
+  ];
+
+  const paragraphs = paragraphMatches
+    .map((match) => stripHtml(match[1]))
+    .map((text) => text.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .filter((text) => !isStructuralHeadingLine(text));
+
+  if (paragraphs.length > 0) {
+    return {
+      text: paragraphs[0],
+      notes: paragraphs.slice(1),
+    };
+  }
+
+  const fallback = stripHtml(contentWithoutPreAndUl)
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const cleanedFallback = fallback.filter(
+    (line) => !isStructuralHeadingLine(line),
+  );
+
+  return {
+    text: cleanedFallback[0] || "",
+    notes: cleanedFallback.slice(1),
+  };
+}
+
+function parseExamples(content = "", exampleTestcases = "") {
   const examples = [];
   const blocks = content.match(/<pre>[\s\S]*?<\/pre>/gi) || [];
 
@@ -47,14 +101,34 @@ function parseExamples(content) {
     );
     const explanationMatch = text.match(/Explanation:\s*([\s\S]*?)$/i);
 
-    if (inputMatch || outputMatch) {
+    const input = inputMatch?.[1]?.trim() || "";
+    const output = outputMatch?.[1]?.trim() || "";
+    const explanation = explanationMatch?.[1]?.trim() || "";
+
+    if (input || output || explanation) {
       examples.push({
-        input: inputMatch?.[1]?.trim() || "",
-        output: outputMatch?.[1]?.trim() || "",
-        explanation: explanationMatch?.[1]?.trim() || "",
+        input,
+        output,
+        explanation,
       });
     }
   });
+
+  if (examples.length === 0 && exampleTestcases) {
+    const lines = String(exampleTestcases)
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .slice(0, 3);
+
+    lines.forEach((line) => {
+      examples.push({
+        input: line,
+        output: "",
+        explanation: "",
+      });
+    });
+  }
 
   return examples;
 }
@@ -146,11 +220,23 @@ export async function fetchLeetCodeQuestion(req, res) {
     }
 
     const trimmed = String(questionIdOrSlug).trim();
-    const isNumeric = /^\d+$/.test(trimmed);
+
+    const extractQuestionSlug = (value) => {
+      const match = String(value).match(/leetcode\.com\/problems\/([^/?#]+)/i);
+
+      if (match?.[1]) {
+        return decodeURIComponent(match[1]).trim();
+      }
+
+      return String(value).trim();
+    };
+
+    const normalizedInput = extractQuestionSlug(trimmed);
+    const isNumeric = /^\d+$/.test(normalizedInput);
 
     const titleSlug = isNumeric
-      ? await resolveSlugFromFrontendId(trimmed)
-      : trimmed;
+      ? await resolveSlugFromFrontendId(normalizedInput)
+      : normalizedInput;
 
     if (!titleSlug) {
       return res
@@ -167,8 +253,9 @@ export async function fetchLeetCodeQuestion(req, res) {
     }
 
     const content = question.content || "";
-    const examples = parseExamples(content);
+    const examples = parseExamples(content, question.exampleTestcases);
     const constraints = parseConstraints(content);
+    const description = parseDescription(content);
 
     const starterCode = {
       javascript: "",
@@ -191,7 +278,7 @@ export async function fetchLeetCodeQuestion(req, res) {
         slug: question.titleSlug,
         difficulty: question.difficulty?.toLowerCase?.() || "easy",
         category: (question.topicTags || []).map((tag) => tag.name).join(" • "),
-        description: content,
+        description,
         examples,
         constraints,
         starterCode,

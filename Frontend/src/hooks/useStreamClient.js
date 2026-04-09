@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
-import { StreamChat } from "stream-chat";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { initializeStreamClient, disconnectStreamClient } from "../lib/stream";
+import { StreamChat } from "stream-chat";
 import { sessionApi } from "../api/sessions";
+import { disconnectStreamClient, initializeStreamClient } from "../lib/stream";
 
 function useStreamClient(session, loadingSession, isHost, isParticipant) {
   const [streamClient, setStreamClient] = useState(null);
@@ -15,13 +15,30 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
     let videoCall = null;
     let chatClientInstance = null;
 
+    if (!loadingSession && !session) {
+      setIsInitializingCall(false);
+      return () => {};
+    }
+
     const initCall = async () => {
-      if (!session?.callId) return;
-      if (!isHost && !isParticipant) return;
-      if (session.status === "completed") return;
+      setIsInitializingCall(true);
+
+      if (!session?.callId) {
+        setIsInitializingCall(false);
+        return;
+      }
+      if (!isHost && !isParticipant) {
+        setIsInitializingCall(false);
+        return;
+      }
+      if (session.status === "completed") {
+        setIsInitializingCall(false);
+        return;
+      }
 
       try {
-        const { token, userId, userName, userImage } = await sessionApi.getStreamToken();
+        const { token, userId, userName, userImage } =
+          await sessionApi.getStreamToken();
 
         const client = await initializeStreamClient(
           {
@@ -29,7 +46,7 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
             name: userName,
             image: userImage,
           },
-          token
+          token,
         );
 
         setStreamClient(client);
@@ -38,23 +55,59 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
         await videoCall.join({ create: true });
         setCall(videoCall);
 
-        const apiKey = import.meta.env.VITE_STREAM_API_KEY;
-        chatClientInstance = StreamChat.getInstance(apiKey);
+        // Chat is secondary; if it fails we still keep video/editor session alive.
+        try {
+          const apiKey = import.meta.env.VITE_STREAM_API_KEY;
+          chatClientInstance = StreamChat.getInstance(apiKey);
 
-        await chatClientInstance.connectUser(
-          {
-            id: userId,
-            name: userName,
-            image: userImage,
-          },
-          token
-        );
-        setChatClient(chatClientInstance);
+          // StreamChat is a singleton; reconnect if it is bound to a different user.
+          if (
+            chatClientInstance.userID &&
+            chatClientInstance.userID !== userId
+          ) {
+            await chatClientInstance.disconnectUser();
+          }
 
-        const chatChannel = chatClientInstance.channel("messaging", session.callId);
-        await chatChannel.watch();
-        setChannel(chatChannel);
+          if (!chatClientInstance.userID) {
+            await chatClientInstance.connectUser(
+              {
+                id: userId,
+                name: userName,
+                image: userImage,
+              },
+              token,
+            );
+          }
+
+          setChatClient(chatClientInstance);
+
+          const chatChannel = chatClientInstance.channel(
+            "messaging",
+            session.callId,
+          );
+
+          try {
+            await chatChannel.watch();
+          } catch (watchError) {
+            // In some races, participant membership may not be reflected yet on Stream.
+            if (!isHost && session?._id) {
+              try {
+                await sessionApi.joinSession(session._id);
+                await chatChannel.watch();
+              } catch (retryError) {
+                throw retryError;
+              }
+            } else {
+              throw watchError;
+            }
+          }
+
+          setChannel(chatChannel);
+        } catch (chatError) {
+          console.warn("Chat init failed (non-blocking):", chatError);
+        }
       } catch (error) {
+        // Only show this toast when video call setup itself fails.
         toast.error("Failed to join video call");
         console.error("Error init call", error);
       } finally {

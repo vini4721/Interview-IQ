@@ -101,16 +101,16 @@ export default function TestCaseViewer({ testResults, isRunning }) {
             </div>
 
             {/* Actual Output */}
-            {!test.passed && (
-              <div>
-                <p className="text-xs text-base-content/60 font-semibold mb-1">
-                  Output:
-                </p>
-                <p className="text-xs font-mono bg-base-200 p-2 rounded text-error">
-                  {test.actual}
-                </p>
-              </div>
-            )}
+            <div>
+              <p className="text-xs text-base-content/60 font-semibold mb-1">
+                Actual Output:
+              </p>
+              <p
+                className={`text-xs font-mono bg-base-200 p-2 rounded ${test.passed ? "text-success" : "text-error"}`}
+              >
+                {test.actual || "No output"}
+              </p>
+            </div>
 
             {/* Error message if any */}
             {test.error && (

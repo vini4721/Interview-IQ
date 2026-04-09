@@ -15,8 +15,10 @@ export const sessionApi = {
     return response.data;
   },
 
-  getSessionById: async (id) => {
-    const response = await axiosInstance.get(`/sessions/${id}`);
+  getSessionById: async (id, options = {}) => {
+    const { publicRead = false } = options;
+    const endpoint = publicRead ? `/public/sessions/${id}` : `/sessions/${id}`;
+    const response = await axiosInstance.get(endpoint);
     return response.data;
   },
 
@@ -26,6 +28,12 @@ export const sessionApi = {
   },
   endSession: async (id) => {
     const response = await axiosInstance.post(`/sessions/${id}/end`);
+    return response.data;
+  },
+  updateSessionQuestion: async (id, question) => {
+    const response = await axiosInstance.put(`/sessions/${id}/question`, {
+      question,
+    });
     return response.data;
   },
   getStreamToken: async () => {
