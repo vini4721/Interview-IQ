@@ -1,5 +1,6 @@
 import { clerkMiddleware } from "@clerk/express";
 import cors from "cors";
+import { existsSync } from "fs";
 import express from "express";
 import { serve } from "inngest/express";
 import path from "path";
@@ -17,6 +18,10 @@ import sessionRoutes from "./routes/sessionRoute.js";
 const app = express();
 
 const __dirname = path.resolve();
+const frontendDistPath = path.join(__dirname, "../../Frontend/dist");
+const frontendIndexPath = path.join(frontendDistPath, "index.html");
+const shouldServeFrontend =
+  ENV.NODE_ENV === "production" && existsSync(frontendIndexPath);
 
 app.use(express.json());
 
@@ -66,11 +71,15 @@ app.get("/health", (req, res) => {
   res.status(200).json({ msg: "api is up and running" });
 });
 
-if (ENV.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../../Frontend/dist")));
+if (shouldServeFrontend) {
+  app.use(express.static(frontendDistPath));
 
   app.get("/{*any}", (req, res) => {
-    res.sendFile(path.join(__dirname, "../../Frontend", "dist", "index.html"));
+    res.sendFile(frontendIndexPath);
+  });
+} else {
+  app.get("/", (req, res) => {
+    res.status(200).json({ msg: "api is up and running" });
   });
 }
 
