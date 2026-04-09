@@ -7,8 +7,21 @@ export function setClerkTokenGetter(fn) {
   clerkGetToken = fn;
 }
 
+const normalizeApiBaseUrl = (rawUrl = "") => {
+  const trimmed = String(rawUrl || "").trim();
+  if (!trimmed) return "/api";
+
+  // Keep local/dev proxy behavior as-is.
+  if (trimmed.startsWith("/")) return trimmed;
+
+  // For absolute URLs, ensure all requests target backend API routes.
+  return trimmed.replace(/\/+$/, "").endsWith("/api")
+    ? trimmed.replace(/\/+$/, "")
+    : `${trimmed.replace(/\/+$/, "")}/api`;
+};
+
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: normalizeApiBaseUrl(import.meta.env.VITE_API_URL),
   withCredentials: true,
 });
 
